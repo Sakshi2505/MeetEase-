@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeetEase - Audio Summary</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Analyze Your Audio</h1>
+    </header>
+    <main>
+        <section class="analyze">
+            <form id="audio-form">
+                <div class="file-upload">
+                    <label for="audio-file">Upload Audio File</label>
+                    <input type="file" id="audio-file" name="audio" accept="audio/*" required>
+                </div>
+                <div class="options">
+                    <label>
+                        <input type="checkbox" name="keywords" checked>
+                        Extract Keywords
+                    </label>
+                    <label>
+                        <input type="checkbox" name="sentiment" checked>
+                        Analyze Sentiment
+                    </label>
+                    <label>
+                        <input type="checkbox" name="topics" checked>
+                        Identify Main Topics
+                    </label>
+                </div>
+                <button type="submit">Analyze Audio</button>
+            </form>
+            <div id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Processing your audio... This may take a few minutes.</p>
+            </div>
+            <div id="results" style="display: none;">
+                <h2>Results</h2>
+                <div id="summary" class="result-section">
+                    <h3>AI Summary</h3>
+                    <div class="summary-content">
+                        <div class="main-summary">
+                            <h4>Summary</h4>
+                            <p></p>
+                        </div>
+                        <div class="key-points">
+                            <h4>Key Points</h4>
+                            <ul></ul>
+                        </div>
+                    </div>
+                </div>
+                <div id="topics" class="result-section">
+                    <h3>Main Topics</h3>
+                    <p></p>
+                </div>
+                <div id="transcript" class="result-section">
+                    <h3>Full Transcript</h3>
+                    <p></p>
+                </div>
+            </div>
+        </section>
+    </main>
+    <style>
+        /* Base styles */
+        :root {
+            --primary-color: #E55634;
+            --bg-color: #f5f7fa;
+            --text-color: #2d3748;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: var(--primary-color);
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Form styles */
+        .analyze {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .file-upload {
+            margin-bottom: 2.5rem;
+        }
+
+        .file-upload label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+            border: 2px dashed var(--primary-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(229, 86, 52, 0.03);
+        }
+
+        .file-upload label:hover {
+            background: rgba(229, 86, 52, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .file-upload label::before {
+            content: '📁';
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .options label {
+            display: flex;
+            align-items: center;
+            padding: 1.25rem;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .options label:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .options input[type="checkbox"] {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary-color);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 1.25rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-md);
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            filter: brightness(110%);
+        }
+
+        /* Results section */
+        .result-section {
+            margin: 2.5rem 0;
+            padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .result-section h3 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .summary-content {
+            display: grid;
+            gap: 2rem;
+            grid-template-columns: 1fr;
+        }
+
+        @media (min-width: 768px) {
+            .summary-content {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .main-summary, .key-points {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            height: fit-content;
+        }
+
+        .main-summary h4, .key-points h4 {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .key-points ul li {
+            padding: 0.75rem 0;
+            padding-left: 1.75rem;
+            position: relative;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .key-points ul li:last-child {
+            border-bottom: none;
+        }
+
+        .key-points ul li::before {
+            content: "→";
+            color: var(--primary-color);
+            position: absolute;
+            left: 0;
+        }
+
+        /* Loading spinner */
+        #loading {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(229, 86, 52, 0.1);
+            border-left: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.75rem;
+            }
+
+            main {
+                margin: 1.5rem auto;
+                padding: 0 1rem;
+            }
+
+            .analyze {
+                padding: 1.5rem;
+            }
+
+            .file-upload label {
+                padding: 2rem 1rem;
+            }
+
+            .options {
+                grid-template-columns: 1fr;
+            }
+
+            .result-section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+    <script>
+        document.getElementById('audio-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const audioFile = document.querySelector('#audio-file').files[0];
+            
+            // Check file size
+            if (audioFile.size > 25 * 1024 * 1024) {
+                alert('File size too large. Maximum size is 25MB.');
+                return;
+            }
+            
+            formData.append('audio', audioFile);
+
+            const loadingEl = document.getElementById('loading');
+            const resultsEl = document.getElementById('results');
+            
+            loadingEl.style.display = 'block';
+            resultsEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Direct assignment if summary is already formatted
+                    if (data.summary) {
+                        const mainSummaryEl = document.querySelector('#summary .main-summary p');
+                        const keyPointsListEl = document.querySelector('#summary .key-points ul');
+                        const keyPointsSection = document.querySelector('#summary .key-points');
+                        
+                        // Clear previous content
+                        mainSummaryEl.textContent = '';
+                        keyPointsListEl.innerHTML = '';
+                        
+                        // Extract summary and key points using regex
+                        const summaryMatch = data.summary.match(/\*\*Summary:\*\*\s*(.*?)(?=\s*\*\*Key Points:|$)/s);
+                        const keyPointsMatch = data.summary.match(/\*\*Key Points:\*\*([\s\S]*)/);
+                        
+                        if (summaryMatch && summaryMatch[1]) {
+                            mainSummaryEl.textContent = summaryMatch[1].trim();
+                        }
+                        
+                        // Only show key points if they exist
+                        if (keyPointsMatch && keyPointsMatch[1]) {
+                            const points = keyPointsMatch[1]
+                                .split('*')
+                                .map(point => point.trim())
+                                .filter(point => point.length > 0);
+                                
+                            if (points.length > 0) {
+                                keyPointsListEl.innerHTML = points
+                                    .map(point => `<li>${point}</li>`)
+                                    .join('');
+                                keyPointsSection.style.display = 'block';
+                            } else {
+                                keyPointsSection.style.display = 'none';
+                            }
+                        } else {
+                            keyPointsSection.style.display = 'none';
+                        }
+                    }
+
+                    // Update other sections if they exist
+                    if (data.topics) {
+                        document.getElementById('topics').querySelector('p').textContent = data.topics;
+                    }
+                    if (data.transcript) {
+                        document.getElementById('transcript').querySelector('p').textContent = data.transcript;
+                    }
+                    
+                    resultsEl.style.display = 'block';
+                } else {
+                    alert(data.error || 'Error processing audio file');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error processing audio. Please try again.');
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
